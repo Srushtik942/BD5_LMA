@@ -115,28 +115,26 @@ app.post('/books', async (req, res) => {
 
         // Validate input
         if (!title || !description || !publicationYear || !authorId || !genreIds) {
-            return res.status(400).json({ message: "Invalid request body. Check required fields!" });
+            return res.status(400).json({ message: "Invalid request body!" });
         }
-
-        console.log("Received authorId:", authorId);
 
         // Check if author exists
         const author = await Author.findByPk(authorId);
         if (!author) {
-            return res.status(404).json({ message: "Invalid Author ID!" });
+            return res.status(404).json({ message: "Invalid AuthorID!" });
         }
 
-        // Check for duplicate book title
-        const existingBook = await Book.findOne({ where: { title } });
-        if (existingBook) {
+        // Checkng for duplicate title
+        const duplicateBook = await Book.findOne({ where: { title } });
+        if (duplicateBook) {
             return res.status(400).json({ message: "Book with this title already exists!" });
         }
 
-        // Create book
+        // Creating newbook
         const newBook = await Book.create({ title, description, publicationYear, authorId });
 
         // Associate book with genres
-        await newBook.addGenres(genres);
+        await newBook.addGenres(genreIds);
 
         res.status(200).json({ message: " Book added successfully!", book: newBook });
     } catch (error) {

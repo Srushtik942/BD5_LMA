@@ -75,7 +75,7 @@ app.get('/authors/:authorId/books',async(req,res)=>{
     let authorId = parseInt(req.params.authorId);
     let result = await fetchBookByAuthor(authorId);
 // validation
-    if(!result){
+    if(result.response.length === 0){
         res.status(404).json({message:"Author Id is wrong!"});
     }
     res.status(200).json({result});
@@ -109,32 +109,40 @@ app.get('/genres/:genreId/books',async(req,res)=>{
 })
 
 // Add a New Book:
+app.post('/books', async (req, res) => {
+    try {
+        let { title, description, publicationYear, authorId, genreIds } = req.body;
 
-async function addNewBook(title, description , publicationYear, authorId) {
-     let createNewBook = await Book.create({
-        title,
-        description,
-        publicationYear,
-        authorId
-     })
-     return {message:"New book Added successfully!",createNewBook}
-}
+        // Validate input
+        if (!title || !description || !publicationYear || !authorId || !genreIds) {
+            return res.status(400).json({ message: "Invalid request body. Check required fields!" });
+        }
 
-app.post('/books',async(req,res)=>{
-    try{
-    let {title, description , publicationYear, authorId} = req.body;
+        console.log("Received authorId:", authorId);
 
-    if(!title || description || !publicationYear || !authorId ){
-        res.status(404).json({message:"Check the request body again!"});
+        // Check if author exists
+        const author = await Author.findByPk(authorId);
+        if (!author) {
+            return res.status(404).json({ message: "Invalid Author ID!" });
+        }
+
+        // Check for duplicate book title
+        const existingBook = await Book.findOne({ where: { title } });
+        if (existingBook) {
+            return res.status(400).json({ message: "Book with this title already exists!" });
+        }
+
+        // Create book
+        const newBook = await Book.create({ title, description, publicationYear, authorId });
+
+        // Associate book with genres
+        await newBook.addGenres(genres);
+
+        res.status(200).json({ message: " Book added successfully!", book: newBook });
+    } catch (error) {
+        res.status(500).json({ message: "Internal Server Error!", error: error.message });
     }
-    let result = await addNewBook(title, description , publicationYear, authorId);
-
-    res.status(200).json({result});
-    }catch(error){
-        res.status(500).json({message:"Internal Server Error!",error:error.message});
-    }
-
-})
+});
 
 
 app.listen(PORT,()=>{

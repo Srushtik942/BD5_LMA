@@ -142,6 +142,52 @@ app.post('/books', async (req, res) => {
     }
 });
 
+// Add new author
+
+app.post('/author/new',async(req,res)=>{
+    try{
+    let {name, birthdate, email} = req.body;
+
+    if(!name || !birthdate || !email){
+        res.status(400).json({message:"Check request body again!"});
+    }
+    const existingAuthor = await Author.findOne({where:{name}});
+    if(existingAuthor){
+        return res.status(404).json({message:"Author is existed!"});
+    }
+    let result = await Author.create({
+        name,
+        birthdate,
+        email
+    })
+    res.status(200).json({message: "Author added successfully!",result});
+
+    }catch(error){
+        res.status(500).json({message:"Internal Server Error",error: error.message});
+    }
+})
+
+// Get the authors by genre ID
+
+async function findAuthorByGenreId(genresId) {
+     // updated finding genres
+     let getGenre = await Genre.findByPk(genresId,{
+        include : Book,
+     });
+    return {getGenre};
+}
+
+app.get('/genres/:genresId/authors',async(req,res)=>{
+    try{
+    let genresId = parseInt(req.params.genresId);
+
+    let result  = await findAuthorByGenreId(genresId);
+    res.status(200).json({result});
+    }catch(error){
+        res.status(500).json({message:"Internal Server error!",error:error.message});
+    }
+
+})
 
 app.listen(PORT,()=>{
     console.log(`Server is running on port ${PORT}`);

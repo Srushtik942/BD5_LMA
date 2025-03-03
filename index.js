@@ -168,7 +168,6 @@ app.post('/author/new',async(req,res)=>{
 })
 
 // Get the authors by genre ID
-
 async function findAuthorByGenreId(genresId) {
      // updated finding genres
      let getGenre = await Genre.findByPk(genresId,{
@@ -180,8 +179,16 @@ async function findAuthorByGenreId(genresId) {
 app.get('/genres/:genresId/authors',async(req,res)=>{
     try{
     let genresId = parseInt(req.params.genresId);
+    // validation
+    if(!genresId){
+        return res.status(400).json({message:"Check your params"});
+    }
 
     let result  = await findAuthorByGenreId(genresId);
+    // validation
+    if(!result){
+        return res.status(404).json({message:"AUthors not found by this Id"});
+    }
     res.status(200).json({result});
     }catch(error){
         res.status(500).json({message:"Internal Server error!",error:error.message});
